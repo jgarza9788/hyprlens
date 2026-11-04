@@ -1,0 +1,9 @@
+[repository]
+name = "hyprlens"
+authors = ["jgarza"]
+description = "A live magnifying lens centered on the pointer, drawn by Hyprland itself"
+
+[hyprlens]
+description = "Magnifier lens centered on the pointer"
+output = "hyprlens.so"
+build = ["make"]

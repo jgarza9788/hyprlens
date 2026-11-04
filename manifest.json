@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "jgarza.hyprlens",
+  "name": "Hyprlens",
+  "version": "0.1.0",
+  "author": "jgarza",
+  "license": "MIT",
+  "description": "A live magnifying lens centered on the pointer, drawn by Hyprland itself, with a settings window for zoom, size, shape, and key bindings. Needs the native plugin: run ./install after adding.",
+  "kinds": [
+    "overlay"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "overlay": "HyprLens.qml"
+  },
+  "homepage": "https://github.com/jgarza9788/hyprlens"
+}

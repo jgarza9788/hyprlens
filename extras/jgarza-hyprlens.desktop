@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Hyprlens
+Comment=Magnifying lens centered on the pointer
+Exec=hyprctl hyprlens toggle
+Icon=zoom-in
+Terminal=false
+Categories=Utility;Accessibility;
+Keywords=magnifier;magnify;zoom;lens;magnifying glass;
+Actions=settings;
+
+[Desktop Action settings]
+Name=Hyprlens Settings
+Exec=omarchy-shell hyprlens settings

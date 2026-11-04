@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Command-line front end for the hyprlens Hyprland plugin: a thin wrapper over
+# `hyprctl hyprlens`, handy for key bindings.
+set -euo pipefail
+
+usage() {
+  cat <<'USAGE'
+Usage: hyprlens [command]
+
+  toggle    Open or close the lens (default)
+  on, off   Open or close the lens
+  zoom-in   Magnify more (x1.25, up to 24x)
+  zoom-out  Magnify less (down to 1.25x)
+  size [small|medium|large]
+            Set the lens size, or cycle small, medium, large with no argument
+  bigger    Next size up (stops at large)
+  smaller   Next size down (stops at small)
+  shape     Switch between circle and square
+  smooth    Switch between smooth and sharp pixels
+  set <zoom|size|shape|smooth> <value>
+  get       Print the current settings as JSON
+USAGE
+}
+
+case "${1:-toggle}" in
+  -h | --help | help) usage ;;
+  *) exec hyprctl hyprlens "${@:-toggle}" ;;
+esac
