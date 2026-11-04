@@ -13,10 +13,10 @@ namespace Logic {
     inline constexpr float MIN_SIZE = 120.f, MAX_SIZE = 1400.f;
     inline constexpr float SIZES[3] = {250.f, 400.f, 600.f}; // small, medium, large
 
-    inline constexpr float MIN_WIDTH = 1.f, MAX_WIDTH = 12.f;
+    inline constexpr float RIM = 3.f; // outline thickness, logical px (glass draws it thinner)
 
     // Outline styles, in the order the shader numbers them.
-    inline constexpr const char* STYLES[] = {"ring", "none", "glow", "double"};
+    inline constexpr const char* STYLES[] = {"ring", "glass", "glow", "none"};
     inline constexpr int         N_STYLES = 4;
 
     struct Settings {
@@ -24,13 +24,12 @@ namespace Logic {
         float       size    = 400.f;    // lens width/height, logical px
         bool        round   = true;     // circle (true) or rounded square
         bool        smooth  = false;    // smooth (true) or sharp pixels
-        std::string style   = "ring";   // outline: ring | none | glow | double
+        std::string style   = "ring";   // outline: ring | glass | glow | none
         std::string outline = "accent"; // outline colour: "accent" (the theme's) or #rrggbb
-        float       width   = 3.f;      // outline thickness, logical px, MIN_WIDTH .. MAX_WIDTH
         bool        hideWhenSharing = false; // leave the lens out while the screen is shared or recorded
     };
 
-    // Index of a style name (0 ring .. 3 double); 0 for anything unknown.
+    // Index of a style name (0 ring, 1 glass, 2 glow, 3 none); 0 for anything unknown.
     int styleIndex(const std::string& style);
 
     // "#rrggbb" or "rrggbb" -> rgb 0..1.
@@ -45,7 +44,7 @@ namespace Logic {
 
     // Set one setting by name: zoom <number>, size <small|medium|large|px>,
     // shape <circle|square>, smooth <true|false|smooth|sharp>,
-    // style <ring|none|glow|double>, outline <accent|#rrggbb>, width <px>,
+    // style <ring|glass|glow|none>, outline <accent|#rrggbb>,
     // capture <show|hide>. Values are
     // clamped to range. Returns "" on success, else a message; on error the
     // settings are left as they were.

@@ -27,4 +27,5 @@ struct SLensFrame {
     float    alpha = 1.f; // fade
     float    scale = 1.f; // lens size relative to its set size (1 when settled)
     float    open  = 1.f; // 0 a solid dot .. 1 the ring has thinned and the view shows
+    bool     reduced = false; // reduced motion: no refraction, glass draws as a plain ring
 };

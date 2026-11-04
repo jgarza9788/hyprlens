@@ -84,7 +84,7 @@ std::string apply(Settings& s, const std::string& key, const std::string& value)
         for (const auto* name : STYLES)
             known = known || value == name;
         if (!known)
-            return "style must be ring, none, glow or double";
+            return "style must be ring, glass, glow or none";
         s.style = value;
     } else if (key == "outline") {
         if (value == "accent")
@@ -95,11 +95,6 @@ std::string apply(Settings& s, const std::string& key, const std::string& value)
             s.outline = buf;
         } else
             return "outline must be accent or a colour like #ff8800";
-    } else if (key == "width") {
-        const auto v = parseFloat(value);
-        if (!v)
-            return "width must be a number";
-        s.width = std::clamp(*v, MIN_WIDTH, MAX_WIDTH);
     } else if (key == "capture") {
         if (value != "show" && value != "hide")
             return "capture must be show or hide";
@@ -145,8 +140,8 @@ std::string rawValue(const std::string& text, const std::string& key) {
 std::string toFileJson(const Settings& s) {
     char buf[360];
     std::snprintf(buf, sizeof buf,
-                  "{\n  \"zoom\": %.3g,\n  \"size\": %.0f,\n  \"shape\": \"%s\",\n  \"smooth\": %s,\n  \"style\": \"%s\",\n  \"outline\": \"%s\",\n  \"width\": %.3g,\n  \"capture\": \"%s\"\n}\n",
-                  s.zoom, s.size, s.round ? "circle" : "square", s.smooth ? "true" : "false", s.style.c_str(), s.outline.c_str(), s.width, s.hideWhenSharing ? "hide" : "show");
+                  "{\n  \"zoom\": %.3g,\n  \"size\": %.0f,\n  \"shape\": \"%s\",\n  \"smooth\": %s,\n  \"style\": \"%s\",\n  \"outline\": \"%s\",\n  \"capture\": \"%s\"\n}\n",
+                  s.zoom, s.size, s.round ? "circle" : "square", s.smooth ? "true" : "false", s.style.c_str(), s.outline.c_str(), s.hideWhenSharing ? "hide" : "show");
     return buf;
 }
 
@@ -160,7 +155,7 @@ void fromFileJson(Settings& s, const std::string& text) {
     if (const auto v = rawValue(text, "smooth"); v == "true" || v == "false")
         s.smooth = v == "true";
     // The rest go through apply(), so a bad value is ignored the same way.
-    for (const char* key : {"style", "outline", "width", "capture"}) {
+    for (const char* key : {"style", "outline", "capture"}) {
         const auto v = rawValue(text, key);
         if (!v.empty())
             apply(s, key, v);

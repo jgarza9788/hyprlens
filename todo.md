@@ -27,8 +27,8 @@ Status: 0.1, working in a live session. Items are in the order I'd do them.
       the lens is left out while Hyprland reports a screen share. **Limits:** one-off `grim` screenshots do *not* raise a share
       event, so they still include the lens; only the share-count path was tested (simulated with `debug shares 1`), not a real recording
       (no `wf-recorder` here).
-- [x] **Outline color and width** as settings (accent stays the default): `outline accent|#rrggbb`, `width 1-12`; the window offers Accent / White / Black and Thin / Normal / Bold.
-- [x] **styles** border, no border, and a few others: `ring`, `none`, `glow`, `double` (checked in a nested Hyprland, circle and square).
+- [x] **Outline colour** as a setting (accent stays the default): `outline accent|#rrggbb`; the window offers Accent / White / Black. The width setting was added and then removed (fixed 3 px, thinner for glass).
+- [x] **styles** simplified to `ring`, `glass`, `glow`, `none` (`double` dropped); colours Accent / White / Black. `glass` is an Apple-style edge: specular rim, inner shading, edge refraction.
 
 ## Settings window
 

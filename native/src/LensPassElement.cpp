@@ -132,7 +132,7 @@ void LensShader::destroy() {
 }
 
 CBox CLensPassElement::bounds(const SLensFrame& f) {
-    const float r = f.lens.size / 2.f + Logic::MAX_WIDTH + SHADOW;
+    const float r = f.lens.size / 2.f + Logic::RIM + SHADOW;
     return CBox{f.lensCenter.x - r, f.lensCenter.y - r, r * 2.0, r * 2.0};
 }
 
@@ -171,7 +171,7 @@ std::vector<UP<IPassElement>> CLensPassElement::draw() {
 
     // Square box centred on the lens, monitor-local physical pixels.
     const Vector2D centerPx = (m_frame.lensCenter - mon->m_position) * scale;
-    const float    half     = (lens.size / 2.f + Logic::MAX_WIDTH + SHADOW) * scale;
+    const float    half     = (lens.size / 2.f + Logic::RIM + SHADOW) * scale;
     CBox           box{centerPx.x - half, centerPx.y - half, half * 2.0, half * 2.0};
     box.round();
 
@@ -203,15 +203,19 @@ std::vector<UP<IPassElement>> CLensPassElement::draw() {
     glUniform1f(s_u.cornerPx, CORNER * m_frame.scale * scale);
     // Opening: the ring starts thick enough to fill the lens (a solid dot) and
     // thins down to its resting width, revealing the view.
-    const float rest = (lens.style == "none" ? 0.f : lens.width) * scale;
+    const bool  glass = lens.style == "glass" && !m_frame.reduced; // reduced motion: a plain ring
+    const float rest  = (lens.style == "none" ? 0.f : glass ? Logic::RIM * 0.6f : Logic::RIM) * scale;
     glUniform1f(s_u.rimPx, rest + (radiusPx - rest) * (1.f - m_frame.open));
     glUniform1f(s_u.alpha, m_frame.alpha);
     std::array<float, 3> colour = Theme::accent();
-    if (lens.outline != "accent")
+    if (lens.outline != "accent") {
         if (const auto c = Logic::parseHexColor(lens.outline))
             colour = *c;
+    } else if (glass)
+        for (auto& ch : colour) // glass is mostly neutral: white with a faint trace of the accent
+            ch = 1.f + (ch - 1.f) * 0.12f;
     glUniform3f(s_u.accent, colour[0], colour[1], colour[2]);
-    glUniform1i(s_u.style, Logic::styleIndex(lens.style));
+    glUniform1i(s_u.style, lens.style == "glass" && !glass ? 0 : Logic::styleIndex(lens.style));
     glUniform1f(s_u.pxScale, scale);
 
     glBindVertexArray(shader->getUniformLocation(SHADER_SHADER_VAO));

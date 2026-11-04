@@ -65,20 +65,19 @@ int main() {
     CHECK(!apply(s, "smooth", "maybe").empty() && s.smooth);
     CHECK(!apply(s, "colour", "red").empty());
 
-    // apply: outline style, colour, width, capture
+    // apply: outline style, colour, capture
     CHECK(apply(s, "style", "glow").empty() && s.style == "glow");
     CHECK(apply(s, "style", "none").empty() && s.style == "none");
-    CHECK(!apply(s, "style", "neon").empty() && s.style == "none");
-    CHECK(styleIndex("ring") == 0 && styleIndex("none") == 1 && styleIndex("glow") == 2 && styleIndex("double") == 3 && styleIndex("zzz") == 0);
+    CHECK(apply(s, "style", "glass").empty() && s.style == "glass");
+    CHECK(!apply(s, "style", "double").empty() && s.style == "glass"); // dropped style: an error, settings unchanged
+    CHECK(!apply(s, "style", "neon").empty() && s.style == "glass"); // an error leaves it alone
+    CHECK(styleIndex("ring") == 0 && styleIndex("glass") == 1 && styleIndex("glow") == 2 && styleIndex("none") == 3 && styleIndex("zzz") == 0);
     CHECK(apply(s, "outline", "#FF8800").empty() && s.outline == "#ff8800"); // normalised
     CHECK(apply(s, "outline", "00aaff").empty() && s.outline == "#00aaff");
     CHECK(apply(s, "outline", "accent").empty() && s.outline == "accent");
     CHECK(!apply(s, "outline", "#fff").empty() && s.outline == "accent");
     CHECK(!apply(s, "outline", "#gggggg").empty());
-    CHECK(apply(s, "width", "6").empty() && near(s.width, 6.f));
-    CHECK(apply(s, "width", "0").empty() && near(s.width, MIN_WIDTH));
-    CHECK(apply(s, "width", "500").empty() && near(s.width, MAX_WIDTH));
-    CHECK(!apply(s, "width", "wide").empty());
+    CHECK(!apply(s, "width", "6").empty()); // the width setting was removed
     CHECK(apply(s, "capture", "hide").empty() && s.hideWhenSharing);
     CHECK(apply(s, "capture", "show").empty() && !s.hideWhenSharing);
     CHECK(!apply(s, "capture", "maybe").empty());
@@ -112,17 +111,19 @@ int main() {
     // the settings file round-trips
     Settings a;
     a.zoom = 6.f; a.size = 600.f; a.round = false; a.smooth = true;
-    a.style = "double"; a.outline = "#123abc"; a.width = 5.f; a.hideWhenSharing = true;
+    a.style = "glow"; a.outline = "#123abc"; a.hideWhenSharing = true;
     Settings b;
     fromFileJson(b, toFileJson(a));
     CHECK(near(b.zoom, 6.f) && near(b.size, 600.f) && !b.round && b.smooth);
-    CHECK(b.style == "double" && b.outline == "#123abc" && near(b.width, 5.f) && b.hideWhenSharing);
+    CHECK(b.style == "glow" && b.outline == "#123abc" && b.hideWhenSharing);
     // an old file without the outline settings keeps the defaults
     Settings old;
     fromFileJson(old, "{\"zoom\": 3, \"size\": 400, \"shape\": \"circle\", \"smooth\": false}");
-    CHECK(old.style == "ring" && old.outline == "accent" && near(old.width, 3.f) && !old.hideWhenSharing);
-    fromFileJson(old, "{\"style\": \"star\", \"outline\": \"red\", \"width\": \"x\", \"capture\": 1}");
-    CHECK(old.style == "ring" && old.outline == "accent" && near(old.width, 3.f) && !old.hideWhenSharing);
+    CHECK(old.style == "ring" && old.outline == "accent" && !old.hideWhenSharing);
+    fromFileJson(old, "{\"style\": \"double\"}"); // a style that no longer exists: keep the default
+    CHECK(old.style == "ring");
+    fromFileJson(old, "{\"style\": \"star\", \"outline\": \"red\", \"capture\": 1}");
+    CHECK(old.style == "ring" && old.outline == "accent" && !old.hideWhenSharing);
 
     // reading is forgiving: bad or missing values keep what's there
     Settings c;

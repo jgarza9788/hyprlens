@@ -19,7 +19,7 @@ Item {
   // Which pane shows: "lens" (the look of the lens) or "keys" (key bindings). Remembered.
   readonly property string pane: lens ? lens.pane : "lens"
   property bool showLua: false
-  readonly property var saved: lens ? lens.saved : ({ zoom: 2.5, size: "medium", shape: "circle", smooth: false, style: "ring", outline: "accent", width: 3, capture: "show" })
+  readonly property var saved: lens ? lens.saved : ({ zoom: 2.5, size: "medium", shape: "circle", smooth: false, style: "ring", outline: "accent", capture: "show" })
 
   // Accent outline around a keyboard-focused control. The theme's own focus
   // styling is faint (buttons, toggle) or missing (the zoom slider).
@@ -244,7 +244,7 @@ Item {
       // Tab / Shift+Tab walk the controls. The platform's own Tab chain
       // doesn't reach them on a layer surface, so step through them here.
       readonly property var focusRing: root.pane === "lens"
-        ? [paneGroup, lensToggle, zoomSlider, sizeGroup, shapeGroup, pixelGroup, styleGroup, colourGroup, widthGroup,
+        ? [paneGroup, lensToggle, zoomSlider, sizeGroup, shapeGroup, pixelGroup, styleGroup, colourGroup,
            captureToggle, resetBtn, undoBtn, closeBtn]
         : [paneGroup, luaToggle, copyBtn, addBtn, editBtn, closeBtn]
       function focusStep(dir) {
@@ -524,22 +524,21 @@ Item {
               PanelSectionHeader { text: "OUTLINE"; width: parent.width }
               Grid {
                 width: parent.width
-                columns: 3
+                columns: 2
                 columnSpacing: Style.space(18)
                 rowSpacing: Style.spacing.md
                 PanelSectionHeader { text: "STYLE" }
                 PanelSectionHeader { text: "COLOUR" }
-                PanelSectionHeader { text: "WIDTH" }
                 Item {
                   implicitWidth: styleGroup.implicitWidth
                   implicitHeight: styleGroup.implicitHeight
                   ButtonGroup {
                     id: styleGroup
                     options: [
-                      { value: "ring",   label: "Ring" },
-                      { value: "none",   label: "None" },
-                      { value: "glow",   label: "Glow" },
-                      { value: "double", label: "Double" }
+                      { value: "ring",  label: "Ring" },
+                      { value: "glass", label: "Glass" },
+                      { value: "glow",  label: "Glow" },
+                      { value: "none",  label: "None" }
                     ]
                     value: root.saved.style
                     onChanged: function (v) { root.lens.setSaved("style", v); }
@@ -560,21 +559,6 @@ Item {
                     onChanged: function (v) { root.lens.setSaved("outline", v); }
                   }
                   ChipRing { group: colourGroup }
-                }
-                Item {
-                  implicitWidth: widthGroup.implicitWidth
-                  implicitHeight: widthGroup.implicitHeight
-                  ButtonGroup {
-                    id: widthGroup
-                    options: [
-                      { value: "2", label: "Thin" },
-                      { value: "3", label: "Normal" },
-                      { value: "6", label: "Bold" }
-                    ]
-                    value: String(root.saved.width)
-                    onChanged: function (v) { root.lens.setSaved("width", Number(v)); }
-                  }
-                  ChipRing { group: widthGroup }
                 }
               }
               Text {

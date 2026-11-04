@@ -141,6 +141,7 @@ namespace {
         }
         const float e = easeOutCubic(g_state->shown);
         SLensFrame  f{.lens = g_state->lens, .center = pointer, .lensCenter = centre, .alpha = e};
+        f.reduced = g_state->reduceMotion;
         if (!g_state->reduceMotion) {
             const float dot  = std::min(1.f, DOT_PX / std::max(1.f, g_state->lens.size));
             const float grow = phase(e, 0.f, 0.6f);
@@ -261,8 +262,8 @@ namespace {
 
     std::string json() {
         const auto& l = g_state->lens;
-        return std::format(R"({{"enabled":{},"zoom":{:.3g},"size":{:.0f},"sizeName":"{}","shape":"{}","smooth":{},"style":"{}","outline":"{}","width":{:.3g},"capture":"{}"}})",
-                           l.enabled, l.zoom, l.size, Logic::sizeName(l.size), l.round ? "circle" : "square", l.smooth, l.style, l.outline, l.width,
+        return std::format(R"({{"enabled":{},"zoom":{:.3g},"size":{:.0f},"sizeName":"{}","shape":"{}","smooth":{},"style":"{}","outline":"{}","capture":"{}"}})",
+                           l.enabled, l.zoom, l.size, Logic::sizeName(l.size), l.round ? "circle" : "square", l.smooth, l.style, l.outline,
                            l.hideWhenSharing ? "hide" : "show");
     }
 

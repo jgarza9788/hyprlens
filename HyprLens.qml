@@ -28,7 +28,7 @@ Item {
   property bool loaded: true       // false when hyprctl can't reach the plugin
   property bool active: false      // the lens is showing
   readonly property var defaults: ({ zoom: 2.5, size: "medium", shape: "circle", smooth: false,
-                                     style: "ring", outline: "accent", width: 3, capture: "show" })
+                                     style: "ring", outline: "accent", capture: "show" })
   property var saved: defaults
 
   readonly property string pluginDir: Qt.resolvedUrl(".").toString().replace(/^file:\/\//, "").replace(/\/$/, "")
@@ -48,7 +48,7 @@ Item {
         root.active = j.enabled === true;
         root.saved = { zoom: j.zoom, size: j.sizeName, shape: j.shape, smooth: j.smooth === true,
                        style: j.style || "ring", outline: j.outline || "accent",
-                       width: j.width === undefined ? 3 : j.width, capture: j.capture || "show" };
+                       capture: j.capture || "show" };
       }
     }
   }
