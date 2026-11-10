@@ -19,13 +19,15 @@ namespace {
         ;
 
     struct SUniforms {
-        GLint style = -1, pxScale = -1, openAmt = -1, accent = -1, pointerOff = -1, boxSize = -1, radius = -1, zoom = -1, roundness = -1, cornerPx = -1, rimPx = -1, alpha = -1, tex = -1, fbSize = -1;
+        GLint style = -1, pxScale = -1, openAmt = -1, accent = -1, pointerOff = -1, boxSize = -1, radius = -1, zoom = -1, roundness = -1, cornerPx = -1, rimPx = -1, sampleRect = -1, alpha = -1, tex = -1, fbSize = -1;
     };
 
     SP<CShader>              s_shader;
     SUniforms                s_u;
     bool                     s_failed = false;
     bool                     g_fullCopy = false;
+    // Glass bends the view near the rim by up to this much (keep in sync with lens.frag).
+    constexpr float GLASS_BEND = 0.45f;
     SP<Render::IFramebuffer> s_sample; // copy of the frame, so the lens reads what's under it
 
     constexpr float SHADOW      = 28.f; // shadow and glow reach beyond the rim, logical px
@@ -40,7 +42,7 @@ namespace {
     // monitor-local physical pixels (screen orientation, top-left origin); with
     // none, or with `fullCopy` set, the whole frame is copied. Anything outside
     // the region is stale, which is fine: the shader never samples there.
-    bool copyFrame(const std::optional<CBox>& region) {
+    bool copyFrame(const std::optional<CBox>& region, float rect[4]) {
         const auto src   = g_pHyprRenderer->m_renderData.currentFB;
         auto*      srcGL = asGL(src);
         if (!srcGL || src->m_size.x < 1 || src->m_size.y < 1)
@@ -48,11 +50,17 @@ namespace {
 
         if (!s_sample)
             s_sample = g_pHyprRenderer->createFB("hyprlens-sample");
-        if (s_sample->m_size != src->m_size || s_sample->m_drmFormat != src->m_drmFormat)
+        const bool realloc = s_sample->m_size != src->m_size || s_sample->m_drmFormat != src->m_drmFormat;
+        if (realloc)
             s_sample->alloc((int)src->m_size.x, (int)src->m_size.y, src->m_drmFormat);
         auto* dstGL = asGL(s_sample);
         if (!dstGL)
             return false;
+        if (realloc) { // never leave uninitialised or old texels around
+            glBindFramebuffer(GL_FRAMEBUFFER, dstGL->getFBID());
+            glClearColor(0.f, 0.f, 0.f, 0.f);
+            glClear(GL_COLOR_BUFFER_BIT);
+        }
 
         const int w = (int)src->m_size.x, h = (int)src->m_size.y;
         int       x0 = 0, y0 = 0, x1 = w, y1 = h;
@@ -77,6 +85,7 @@ namespace {
         }
         if (x1 <= x0 || y1 <= y0)
             return false;
+        rect[0] = x0; rect[1] = y0; rect[2] = x1; rect[3] = y1;
         // The pass scissors elements to their damage; that would clip the blit.
         Render::GL::g_pHyprOpenGL->setCapStatus(GL_SCISSOR_TEST, false);
         glBindFramebuffer(GL_READ_FRAMEBUFFER, srcGL->getFBID());
@@ -111,6 +120,7 @@ namespace {
         s_u.roundness = glGetUniformLocation(p, "roundness");
         s_u.cornerPx  = glGetUniformLocation(p, "cornerPx");
         s_u.rimPx     = glGetUniformLocation(p, "rimPx");
+        s_u.sampleRect = glGetUniformLocation(p, "sampleRect");
         s_u.alpha     = glGetUniformLocation(p, "alpha");
         s_u.tex       = glGetUniformLocation(p, "tex");
         s_u.fbSize    = glGetUniformLocation(p, "fbSize");
@@ -121,6 +131,10 @@ namespace {
 
 void LensShader::setFullCopy(bool on) {
     g_fullCopy = on;
+}
+
+void LensShader::invalidate() {
+    s_sample.reset();
 }
 
 void LensShader::destroy() {
@@ -165,8 +179,11 @@ std::vector<UP<IPassElement>> CLensPassElement::draw() {
     // the pointer, plus a little for smooth filtering.
     const float    radiusPx = lens.size / 2.f * m_frame.scale * scale;
     const Vector2D pointerPx = (m_frame.center - mon->m_position) * scale;
-    const double   patchHalf = radiusPx / std::max(lens.zoom, 1.f) + 4.0;
-    if (!copyFrame(CBox{pointerPx.x - patchHalf, pointerPx.y - patchHalf, patchHalf * 2.0, patchHalf * 2.0}))
+    // Glass samples up to (1 + GLASS_BEND)x further out near the rim, and square
+    // corners reach sqrt(2)x the half-width.
+    const double   patchHalf = radiusPx * std::sqrt(2.0) * (1.0 + GLASS_BEND) / std::max(lens.zoom, 1.f) + 4.0;
+    float          sampleRect[4];
+    if (!copyFrame(CBox{pointerPx.x - patchHalf, pointerPx.y - patchHalf, patchHalf * 2.0, patchHalf * 2.0}, sampleRect))
         return {};
 
     // Square box centred on the lens, monitor-local physical pixels.
@@ -195,6 +212,7 @@ std::vector<UP<IPassElement>> CLensPassElement::draw() {
     // Where the pointer is relative to the lens centre (nonzero at screen edges).
     const Vector2D off = (m_frame.center - m_frame.lensCenter) * scale;
     glUniform2f(s_u.pointerOff, off.x, off.y);
+    glUniform4f(s_u.sampleRect, sampleRect[0], sampleRect[1], sampleRect[2], sampleRect[3]);
     glUniform1f(s_u.radius, radiusPx);
     glUniform1f(s_u.zoom, lens.zoom);
     // A square lens is still a round dot until it opens.

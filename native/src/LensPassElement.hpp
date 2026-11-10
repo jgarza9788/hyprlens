@@ -34,4 +34,6 @@ namespace LensShader {
     unsigned long draws();
     // Compiled lazily on first draw (needs the GL context); freed on unload.
     void destroy();
+    // Drop the frame copy so no old screen content survives (e.g. across a lock).
+    void invalidate();
 }

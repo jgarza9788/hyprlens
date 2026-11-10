@@ -24,6 +24,7 @@
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/output/Monitor.hpp>
 #include <hyprland/src/render/Renderer.hpp>
+#include <hyprland/src/managers/SessionLockManager.hpp>
 
 #include <algorithm>
 #include <chrono>
@@ -109,7 +110,8 @@ namespace {
     bool visible() { return g_state && (g_state->lens.enabled || g_state->shown > 0.f); }
 
     // "Hide from captures": leave the lens out while the screen is shared or recorded.
-    bool hiddenNow() { return g_state->lens.hideWhenSharing && g_state->shares > 0; }
+    bool locked() { return g_pSessionLockManager && g_pSessionLockManager->isSessionLocked(); }
+    bool hiddenNow() { return (g_state->lens.hideWhenSharing && g_state->shares > 0) || locked(); }
 
     // Frames we ask for ourselves: while the lens animates, and briefly after the
     // pointer moves. Otherwise it only redraws when something else on screen does.
@@ -182,6 +184,8 @@ namespace {
             return;
         advance();
         if ((!g_state->lens.enabled && g_state->shown <= 0.f) || hiddenNow()) {
+            if (locked())
+                LensShader::invalidate();
             if (g_state->lastBounds)
                 g_pHyprRenderer->damageBox(*g_state->lastBounds);
             g_state->lastBounds.reset();
@@ -218,8 +222,13 @@ namespace {
         const auto mon = g_pHyprRenderer->m_renderData.pMonitor.lock();
         if (!mon)
             return;
-        if (g_state->shown <= 0.f || hiddenNow())
+        if (g_state->shown <= 0.f)
             return;
+        if (hiddenNow()) {
+            if (locked())
+                LensShader::invalidate();
+            return;
+        }
         const auto f = frame();
         if (!CLensPassElement::bounds(f).overlaps(CBox{mon->m_position, mon->m_size}))
             return;

@@ -26,6 +26,7 @@ uniform int   style;     // outline: 0 ring, 1 glass, 2 glow (3 none draws as a 
 uniform float pxScale;   // monitor scale, so glow and gap sizes stay logical
 uniform float alpha;      // 0..1, for fading in and out
 uniform sampler2D tex;    // copy of the frame so far
+uniform vec4  sampleRect; // region of tex that is fresh (x0,y0,x1,y1), px
 uniform vec2  fbSize;     // its size in pixels
 
 float roundedBoxSDF(vec2 p, vec2 halfSize, float r) {
@@ -74,7 +75,9 @@ void main() {
         fbView *= 1.0 + 0.45 * e * e * openAmt;
     }
     vec2 src = fbCentre + fbShift + fbView;
-    vec3 view = texture(tex, clamp(src / fbSize, vec2(0.0), vec2(1.0))).rgb;
+    // Only ever read the freshly copied region; the rest of tex is stale.
+    src = clamp(src, sampleRect.xy + 0.5, sampleRect.zw - 0.5);
+    vec3 view = texture(tex, src / fbSize).rgb;
 
     // Rim: the theme's accent colour, a solid ring just inside the edge.
     float ring = 1.0 - smoothstep(-aa, aa, abs(sdf + rimPx * 0.5) - rimPx * 0.5);
