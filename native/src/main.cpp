@@ -63,7 +63,7 @@ namespace {
         steady_clock::time_point                  lastMove     = steady_clock::now() - seconds(10);
         std::optional<CBox>                       lastBounds;
         std::vector<Hyprutils::Signal::CHyprSignalListener> listeners;
-        SP<SHyprCtlCommand>                       ctl;
+        SP<IPC::Socket1::SCommand>               ctl;
     };
     std::unique_ptr<SState> g_state;
 
@@ -212,14 +212,20 @@ namespace {
             g_pHyprRenderer->damageBox(*g_state->lastBounds);
     }
 
-    void onRenderStage(eRenderStage stage) {
-        if ((stage != RENDER_LAST_MOMENT && stage != RENDER_POST) || !visible() || g_pHyprRenderer->m_bRenderingSnapshot)
+    void onRenderStage(const Event::SRenderStageEvent& e) {
+        const auto stage = e.stage;
+        if ((stage != RENDER_LAST_MOMENT && stage != RENDER_POST) || !visible())
             return;
         if (stage == RENDER_POST) {
             onPostRender();
             return;
         }
-        const auto mon = g_pHyprRenderer->m_renderData.pMonitor.lock();
+        if (!e.context)
+            return;
+        auto& ctx = e.context->get();
+        if (ctx.m_renderingSnapshot)
+            return;
+        const auto mon = e.monitor;
         if (!mon)
             return;
         if (g_state->shown <= 0.f)
@@ -230,9 +236,9 @@ namespace {
             return;
         }
         const auto f = frame();
-        if (!CLensPassElement::bounds(f).overlaps(CBox{mon->m_position, mon->m_size}))
+        if (!CLensPassElement::bounds(f).overlaps(CBox{mon->m_position.x, mon->m_position.y, mon->m_size.x, mon->m_size.y}))
             return;
-        g_pHyprRenderer->m_renderPass.add(makeUnique<CLensPassElement>(f));
+        ctx.m_pass.add(makeUnique<CLensPassElement>(f));
     }
 
     // ── saved settings ───────────────────────────────────────────────────────
@@ -276,7 +282,7 @@ namespace {
                            l.hideWhenSharing ? "hide" : "show");
     }
 
-    std::string onHyprctl(eHyprCtlOutputFormat, std::string request) {
+    std::string onHyprctl(std::string request) {
         if (!g_state)
             return "hyprlens: not loaded";
         if (request.size() > 512)
@@ -373,7 +379,7 @@ namespace {
     int luaRun(lua_State* L) {
         if (!g_state)
             return 0;
-        const std::string out = onHyprctl(eHyprCtlOutputFormat::FORMAT_NORMAL, luaL_checkstring(L, 1));
+        const std::string out = onHyprctl(luaL_checkstring(L, 1));
         if (out.starts_with("error") || out.starts_with("usage"))
             return luaL_error(L, "hyprlens: %s", out.c_str());
         return 0;
@@ -399,7 +405,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     g_state      = std::make_unique<SState>();
     HyprlandAPI::addLuaFunction(PHANDLE, "hyprlens", "run", luaRun);
-    g_state->ctl = HyprlandAPI::registerHyprCtlCommand(PHANDLE, SHyprCtlCommand{.name = "hyprlens", .exact = false, .fn = onHyprctl});
+    g_state->ctl = HyprlandAPI::registerHyprCtlCommand(PHANDLE, IPC::Socket1::SCommand{.name = "hyprlens", .match = IPC::Socket1::COMMAND_MATCH_PREFIX, .handler = [](const IPC::Socket1::SRequest& r) { return IPC::Socket1::SResponse(onHyprctl(r.command)); }});
 
     loadSettings();
 
@@ -420,7 +426,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
             g_pHyprRenderer->damageBox(*g_state->lastBounds); // redraw with or without the lens
     }));
     g_state->listeners.push_back(ev.render.pre.listen([](PHLMONITOR mon) { onPreRender(mon); }));
-    g_state->listeners.push_back(ev.render.stage.listen([](eRenderStage stage) { onRenderStage(stage); }));
+    g_state->listeners.push_back(ev.render.stage.listen([](const Event::SRenderStageEvent& e) { onRenderStage(e); }));
 
     return {std::string(PLUGIN_NAME), std::string(PLUGIN_DESCRIPTION), std::string(PLUGIN_AUTHOR), std::string(PLUGIN_VERSION)};
 }
@@ -435,7 +441,6 @@ APICALL EXPORT void PLUGIN_EXIT() {
     if (g_state->lastBounds)
         g_pHyprRenderer->damageBox(*g_state->lastBounds);
 
-    g_pHyprRenderer->m_renderPass.removeAllOfType("CLensPassElement");
     LensShader::destroy();
     g_state.reset();
 }

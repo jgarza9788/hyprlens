@@ -9,12 +9,12 @@ class CLensPassElement : public IPassElement {
     explicit CLensPassElement(const SLensFrame& frame);
     ~CLensPassElement() override = default;
 
-    std::vector<UP<IPassElement>> draw() override;
-    bool                          needsLiveBlur() override { return false; }
-    bool                          needsPrecomputeBlur() override { return false; }
-    std::optional<CBox>           boundingBox() override;
-    CRegion                       opaqueRegion() override { return {}; }
-    bool                          disableSimplification() override { return true; }
+    std::vector<UP<IPassElement>> draw(Render::CRenderContext& ctx) override;
+    bool                          needsLiveBlur(Render::CRenderContext&) override { return false; }
+    bool                          needsPrecomputeBlur(Render::CRenderContext&) override { return false; }
+    std::optional<CBox>           boundingBox(Render::CRenderContext& ctx) override;
+    CRegion                       opaqueRegion(Render::CRenderContext&) override { return {}; }
+    bool                          disableSimplification(Render::CRenderContext&) override { return true; }
 
     const char*      passName() override { return "CLensPassElement"; }
     ePassElementType type() override { return EK_CUSTOM; }
