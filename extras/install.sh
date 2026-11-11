@@ -16,9 +16,12 @@ pkg-config --exists hyprland || { echo "hyprlens: the Hyprland development files
 
 # 1. Build the native plugin (and load it into this session if it isn't).
 make -C "$root" || { echo "hyprlens: the build failed. It needs Hyprland 0.56+ and its headers; see the output above." >&2; exit 1; }
-if ! hyprctl plugin list 2>/dev/null | grep -q "Plugin hyprlens"; then
-  hyprctl plugin load "$root/hyprlens.so" || echo "couldn't load it now; see the README"
+if hyprctl plugin list 2>/dev/null | grep -q "Plugin hyprlens"; then
+  # Replace the resident copy so a rebuilt (fixed) library actually takes effect.
+  hyprctl plugin unload "$root/hyprlens.so" >/dev/null 2>&1 \
+    || echo "hyprlens: couldn't unload the running copy; log out and back in so the fixed build takes effect." >&2
 fi
+hyprctl plugin load "$root/hyprlens.so" || echo "couldn't load it now; see the README"
 
 # 2. Enable the overlay plugin so `omarchy-shell shell toggle` will summon it.
 omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
