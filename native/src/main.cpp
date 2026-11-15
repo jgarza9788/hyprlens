@@ -2,7 +2,7 @@
 // compositor itself so it never magnifies itself.
 //
 //   hyprctl hyprlens toggle | on | off
-//   hyprctl hyprlens zoom-in | zoom-out | bigger | smaller | size [small|medium|large]
+//   hyprctl hyprlens zoom-in | zoom-out | bigger | smaller | size [small|medium|large|xlarge]
 //   hyprctl hyprlens shape | smooth
 //   hyprctl hyprlens set <zoom|size|shape|smooth> <value>
 //   hyprctl hyprlens get

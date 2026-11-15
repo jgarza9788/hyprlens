@@ -21,15 +21,14 @@ std::optional<float> parseFloat(const std::string& s) {
 
 int sizeIndex(float size) {
     int best = 0;
-    for (int i = 1; i < 3; ++i)
+    for (int i = 1; i < SIZE_COUNT; ++i)
         if (std::abs(SIZES[i] - size) < std::abs(SIZES[best] - size))
             best = i;
     return best;
 }
 
 const char* sizeName(float size) {
-    static constexpr const char* NAMES[] = {"small", "medium", "large"};
-    return NAMES[sizeIndex(size)];
+    return SIZE_NAMES[sizeIndex(size)];
 }
 
 int styleIndex(const std::string& style) {
@@ -61,16 +60,16 @@ std::string apply(Settings& s, const std::string& key, const std::string& value)
             return "zoom must be a number";
         s.zoom = std::clamp(*v, MIN_ZOOM, MAX_ZOOM);
     } else if (key == "size") {
-        if (value == "small")
-            s.size = SIZES[0];
-        else if (value == "medium")
-            s.size = SIZES[1];
-        else if (value == "large")
-            s.size = SIZES[2];
+        int named = -1;
+        for (int i = 0; i < SIZE_COUNT; ++i)
+            if (value == SIZE_NAMES[i])
+                named = i;
+        if (named >= 0)
+            s.size = SIZES[named];
         else if (const auto v = parseFloat(value))
             s.size = std::clamp(*v, MIN_SIZE, MAX_SIZE);
         else
-            return "size must be small, medium, large or a pixel count";
+            return "size must be small, medium, large, xlarge or a pixel count";
     } else if (key == "shape") {
         if (value != "circle" && value != "square")
             return "shape must be circle or square";
@@ -109,11 +108,11 @@ void zoomBy(Settings& s, float factor) {
 }
 
 void stepSize(Settings& s, int delta) {
-    s.size = SIZES[std::clamp(sizeIndex(s.size) + delta, 0, 2)];
+    s.size = SIZES[std::clamp(sizeIndex(s.size) + delta, 0, SIZE_COUNT - 1)];
 }
 
 void cycleSize(Settings& s) {
-    s.size = SIZES[(sizeIndex(s.size) + 1) % 3];
+    s.size = SIZES[(sizeIndex(s.size) + 1) % SIZE_COUNT];
 }
 
 std::string rawValue(const std::string& text, const std::string& key) {

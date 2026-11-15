@@ -58,7 +58,7 @@ All the commands (`bin/hyprlens` is the same thing as a short command):
 ```sh
 hyprctl hyprlens toggle | on | off
 hyprctl hyprlens zoom-in | zoom-out            # x1.25 per step, 1.25x to 24x
-hyprctl hyprlens bigger | smaller | size [small|medium|large]
+hyprctl hyprlens bigger | smaller | size [small|medium|large|xlarge]
 hyprctl hyprlens shape | smooth                # circle/square, smooth/sharp pixels
 hyprctl hyprlens set zoom 4                    # zoom, size (px or a name), shape, smooth
 hyprctl hyprlens set style glass               # outline: ring (default), glass, glow, none
@@ -67,7 +67,7 @@ hyprctl hyprlens set capture hide              # leave the lens out while the sc
 hyprctl hyprlens get                           # current settings as JSON
 ```
 
-The three sizes are small (250 px), medium (400 px) and large (600 px). Settings are saved to
+The four sizes are small (400 px), medium (600 px), large (900 px) and xlarge (1200 px). Settings are saved to
 `~/.config/omarchy/jgarza.hyprlens/settings.json` and survive restarts, whether you change them
 from the window, a key binding, or `hyprctl`.
 

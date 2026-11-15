@@ -27,7 +27,7 @@ Item {
   readonly property real maxZoom: 24
   property bool loaded: true       // false when hyprctl can't reach the plugin
   property bool active: false      // the lens is showing
-  readonly property var defaults: ({ zoom: 2.5, size: "medium", shape: "circle", smooth: false,
+  readonly property var defaults: ({ zoom: 2.5, size: "small", shape: "circle", smooth: false,
                                      style: "ring", outline: "accent", capture: "show" })
   property var saved: defaults
 

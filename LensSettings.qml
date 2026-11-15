@@ -19,7 +19,7 @@ Item {
   // Which pane shows: "lens" (the look of the lens) or "keys" (key bindings). Remembered.
   readonly property string pane: lens ? lens.pane : "lens"
   property bool showLua: false
-  readonly property var saved: lens ? lens.saved : ({ zoom: 2.5, size: "medium", shape: "circle", smooth: false, style: "ring", outline: "accent", capture: "show" })
+  readonly property var saved: lens ? lens.saved : ({ zoom: 2.5, size: "small", shape: "circle", smooth: false, style: "ring", outline: "accent", capture: "show" })
 
   // Accent outline around a keyboard-focused control. The theme's own focus
   // styling is faint (buttons, toggle) or missing (the zoom slider).
@@ -480,7 +480,8 @@ Item {
                   options: [
                     { value: "small",  label: "Small" },
                     { value: "medium", label: "Medium" },
-                    { value: "large",  label: "Large" }
+                    { value: "large",  label: "Large" },
+                    { value: "xlarge", label: "Xlarge" }
                   ]
                   value: root.saved.size
                   onChanged: function (v) { root.lens.setSaved("size", v); }

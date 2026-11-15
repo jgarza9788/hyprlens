@@ -11,7 +11,9 @@
 namespace Logic {
     inline constexpr float MIN_ZOOM = 1.25f, MAX_ZOOM = 24.f;
     inline constexpr float MIN_SIZE = 120.f, MAX_SIZE = 1400.f;
-    inline constexpr float SIZES[3] = {250.f, 400.f, 600.f}; // small, medium, large
+    inline constexpr int   SIZE_COUNT = 4;
+    inline constexpr float SIZES[SIZE_COUNT]                = {400.f, 600.f, 900.f, 1200.f};
+    inline constexpr const char* SIZE_NAMES[SIZE_COUNT]     = {"small", "medium", "large", "xlarge"};
 
     inline constexpr float RIM = 3.f; // outline thickness, logical px (glass draws it thinner)
 
@@ -38,11 +40,11 @@ namespace Logic {
     // A plain decimal number; nothing else (no trailing junk, NaN or inf).
     std::optional<float> parseFloat(const std::string& s);
 
-    // Which of the three named sizes `size` is closest to (0 small, 1 medium, 2 large).
+    // Which named size `size` is closest to (index into SIZES / SIZE_NAMES).
     int         sizeIndex(float size);
     const char* sizeName(float size);
 
-    // Set one setting by name: zoom <number>, size <small|medium|large|px>,
+    // Set one setting by name: zoom <number>, size <small|medium|large|xlarge|px>,
     // shape <circle|square>, smooth <true|false|smooth|sharp>,
     // style <ring|glass|glow|none>, outline <accent|#rrggbb>,
     // capture <show|hide>. Values are
@@ -52,7 +54,7 @@ namespace Logic {
 
     void zoomBy(Settings& s, float factor);
     void stepSize(Settings& s, int delta); // bigger (+1) / smaller (-1): stops at the ends
-    void cycleSize(Settings& s);           // small -> medium -> large -> small
+    void cycleSize(Settings& s);           // small -> medium -> large -> xlarge -> small
 
     // The settings file: a flat JSON object. Reading ignores missing or bad
     // values and keeps what `s` already holds.

@@ -33,10 +33,10 @@ int main() {
     CHECK(!parseFloat(std::string(100, '1')));
 
     // named sizes
-    CHECK(sizeIndex(250) == 0 && sizeIndex(400) == 1 && sizeIndex(600) == 2);
-    CHECK(sizeIndex(10) == 0 && sizeIndex(5000) == 2);
-    CHECK(sizeIndex(320) == 0 && sizeIndex(330) == 1); // nearest
-    CHECK(std::string(sizeName(400)) == "medium");
+    CHECK(sizeIndex(400) == 0 && sizeIndex(600) == 1 && sizeIndex(900) == 2 && sizeIndex(1200) == 3);
+    CHECK(sizeIndex(10) == 0 && sizeIndex(5000) == 3);
+    CHECK(sizeIndex(450) == 0 && sizeIndex(550) == 1); // nearest
+    CHECK(std::string(sizeName(600)) == "medium");
 
     // apply: zoom
     Settings s;
@@ -48,12 +48,12 @@ int main() {
 
     // apply: size
     CHECK(apply(s, "size", "small").empty() && near(s.size, SIZES[0]));
-    CHECK(apply(s, "size", "large").empty() && near(s.size, SIZES[2]));
+    CHECK(apply(s, "size", "large").empty() && near(s.size, SIZES[2]) && apply(s, "size", "xlarge").empty() && near(s.size, SIZES[3]));
     CHECK(apply(s, "size", "500").empty() && near(s.size, 500.f));
     CHECK(apply(s, "size", "1").empty() && near(s.size, MIN_SIZE));
     CHECK(apply(s, "size", "99999").empty() && near(s.size, MAX_SIZE));
     s.size = 400.f;
-    CHECK(!apply(s, "size", "huge").empty() && near(s.size, 400.f));
+    CHECK(!apply(s, "size", "enormous").empty() && near(s.size, 400.f));
 
     // apply: shape and smooth
     CHECK(apply(s, "shape", "square").empty() && !s.round);
@@ -96,16 +96,16 @@ int main() {
     s.size = SIZES[1];
     stepSize(s, +1);
     CHECK(near(s.size, SIZES[2]));
-    stepSize(s, +1);
-    CHECK(near(s.size, SIZES[2])); // stops at large
-    stepSize(s, -1);
-    stepSize(s, -1);
-    stepSize(s, -1);
+    for (int i = 0; i < SIZE_COUNT; ++i)
+        stepSize(s, +1);
+    CHECK(near(s.size, SIZES[SIZE_COUNT - 1])); // stops at xlarge
+    for (int i = 0; i < SIZE_COUNT; ++i)
+        stepSize(s, -1);
     CHECK(near(s.size, SIZES[0])); // stops at small
     cycleSize(s);
     CHECK(near(s.size, SIZES[1]));
-    cycleSize(s);
-    cycleSize(s);
+    for (int i = 0; i < SIZE_COUNT - 1; ++i)
+        cycleSize(s);
     CHECK(near(s.size, SIZES[0])); // wraps
 
     // the settings file round-trips
