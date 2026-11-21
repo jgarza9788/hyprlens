@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Globals.hpp"
+#include "hlcompat.hpp"
 
 #include <hyprland/src/render/pass/PassElement.hpp>
 
@@ -9,12 +10,12 @@ class CLensPassElement : public IPassElement {
     explicit CLensPassElement(const SLensFrame& frame);
     ~CLensPassElement() override = default;
 
-    std::vector<UP<IPassElement>> draw(Render::CRenderContext& ctx) override;
-    bool                          needsLiveBlur(Render::CRenderContext&) override { return false; }
-    bool                          needsPrecomputeBlur(Render::CRenderContext&) override { return false; }
-    std::optional<CBox>           boundingBox(Render::CRenderContext& ctx) override;
-    CRegion                       opaqueRegion(Render::CRenderContext&) override { return {}; }
-    bool                          disableSimplification(Render::CRenderContext&) override { return true; }
+    std::vector<UP<IPassElement>> draw(HLC_CTX_PARAM(ctx)) override;
+    bool                          needsLiveBlur(HLC_CTX_PARAM()) override { return false; }
+    bool                          needsPrecomputeBlur(HLC_CTX_PARAM()) override { return false; }
+    std::optional<CBox>           boundingBox(HLC_CTX_PARAM(ctx)) override;
+    CRegion                       opaqueRegion(HLC_CTX_PARAM()) override { return {}; }
+    bool                          disableSimplification(HLC_CTX_PARAM()) override { return true; }
 
     const char*      passName() override { return "CLensPassElement"; }
     ePassElementType type() override { return EK_CUSTOM; }

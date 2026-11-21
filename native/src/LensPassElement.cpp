@@ -42,7 +42,7 @@ namespace {
     // monitor-local physical pixels (screen orientation, top-left origin); with
     // none, or with `fullCopy` set, the whole frame is copied. Anything outside
     // the region is stale, which is fine: the shader never samples there.
-    bool copyFrame(Render::CRenderContext& ctx, const std::optional<CBox>& region, float rect[4]) {
+    bool copyFrame(hlc::Ctx& ctx, const std::optional<CBox>& region, float rect[4]) {
         const auto src   = ctx.m_data.currentFB;
         auto*      srcGL = asGL(src);
         if (!srcGL || src->m_size.x < 1 || src->m_size.y < 1)
@@ -69,7 +69,7 @@ namespace {
             // Into framebuffer pixels with the same projection the lens quad is
             // drawn with, so any monitor rotation or flip is handled the same way.
             const auto transform = Math::wlTransformToHyprutils(Math::invertTransform(mon->m_transform));
-            const auto m         = g_pHyprRenderer->projectBoxToTarget(ctx, *region, transform).getMatrix(); // row-major, clip = M * (u, v, 1)
+            const auto m         = hlc::projectBox(ctx, *region, transform).getMatrix(); // row-major, clip = M * (u, v, 1)
             double     minX = 1e30, minY = 1e30, maxX = -1e30, maxY = -1e30;
             for (int c = 0; c < 4; ++c) {
                 const float u = c & 1, v = (c >> 1) & 1;
@@ -152,7 +152,8 @@ CBox CLensPassElement::bounds(const SLensFrame& f) {
 
 CLensPassElement::CLensPassElement(const SLensFrame& frame) : m_frame(frame) {}
 
-std::optional<CBox> CLensPassElement::boundingBox(Render::CRenderContext& ctx) {
+std::optional<CBox> CLensPassElement::boundingBox(HLC_CTX_PARAM(ctx)) {
+    HLC_CTX_BIND(ctx);
     const auto mon = ctx.m_data.pMonitor.lock();
     if (!mon)
         return std::nullopt;
@@ -166,7 +167,8 @@ unsigned long LensShader::draws() {
     return g_draws;
 }
 
-std::vector<UP<IPassElement>> CLensPassElement::draw(Render::CRenderContext& ctx) {
+std::vector<UP<IPassElement>> CLensPassElement::draw(HLC_CTX_PARAM(ctx)) {
+    HLC_CTX_BIND(ctx);
     ++g_draws;
     const auto mon = ctx.m_data.pMonitor.lock();
     if (!mon || m_frame.alpha <= 0.001f || !ensureShader())
@@ -193,7 +195,7 @@ std::vector<UP<IPassElement>> CLensPassElement::draw(Render::CRenderContext& ctx
     box.round();
 
     const auto transform = Math::wlTransformToHyprutils(Math::invertTransform(mon->m_transform));
-    Mat3x3     proj      = g_pHyprRenderer->projectBoxToTarget(ctx, box, transform);
+    Mat3x3     proj      = hlc::projectBox(ctx, box, transform);
     proj.transpose();
 
     Render::GL::g_pHyprOpenGL->blend(true);
@@ -237,9 +239,9 @@ std::vector<UP<IPassElement>> CLensPassElement::draw(Render::CRenderContext& ctx
     glUniform1f(s_u.pxScale, scale);
 
     glBindVertexArray(shader->getUniformLocation(SHADER_SHADER_VAO));
-    Render::GL::g_pHyprOpenGL->scissor(ctx, box);
+    hlc::scissor(ctx, box);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    Render::GL::g_pHyprOpenGL->disableScissor();
+    hlc::disableScissor();
     glBindVertexArray(0);
 
     return {};

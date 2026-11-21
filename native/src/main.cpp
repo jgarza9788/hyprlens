@@ -63,7 +63,7 @@ namespace {
         steady_clock::time_point                  lastMove     = steady_clock::now() - seconds(10);
         std::optional<CBox>                       lastBounds;
         std::vector<Hyprutils::Signal::CHyprSignalListener> listeners;
-        SP<IPC::Socket1::SCommand>               ctl;
+        hlc::CtlCommand                           ctl;
     };
     std::unique_ptr<SState> g_state;
 
@@ -212,7 +212,7 @@ namespace {
             g_pHyprRenderer->damageBox(*g_state->lastBounds);
     }
 
-    void onRenderStage(const Event::SRenderStageEvent& e) {
+    void onRenderStage(const hlc::RenderStageEvent& e) {
         const auto stage = e.stage;
         if ((stage != RENDER_LAST_MOMENT && stage != RENDER_POST) || !visible())
             return;
@@ -405,7 +405,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     g_state      = std::make_unique<SState>();
     HyprlandAPI::addLuaFunction(PHANDLE, "hyprlens", "run", luaRun);
-    g_state->ctl = HyprlandAPI::registerHyprCtlCommand(PHANDLE, IPC::Socket1::SCommand{.name = "hyprlens", .match = IPC::Socket1::COMMAND_MATCH_PREFIX, .handler = [](const IPC::Socket1::SRequest& r) { return IPC::Socket1::SResponse(onHyprctl(r.command)); }});
+    g_state->ctl = hlc::registerCtl(PHANDLE, "hyprlens", onHyprctl);
 
     loadSettings();
 
@@ -426,7 +426,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
             g_pHyprRenderer->damageBox(*g_state->lastBounds); // redraw with or without the lens
     }));
     g_state->listeners.push_back(ev.render.pre.listen([](PHLMONITOR mon) { onPreRender(mon); }));
-    g_state->listeners.push_back(ev.render.stage.listen([](const Event::SRenderStageEvent& e) { onRenderStage(e); }));
+    g_state->listeners.push_back(hlc::listenRenderStage([](const hlc::RenderStageEvent& e) { onRenderStage(e); }));
 
     return {std::string(PLUGIN_NAME), std::string(PLUGIN_DESCRIPTION), std::string(PLUGIN_AUTHOR), std::string(PLUGIN_VERSION)};
 }
@@ -441,6 +441,7 @@ APICALL EXPORT void PLUGIN_EXIT() {
     if (g_state->lastBounds)
         g_pHyprRenderer->damageBox(*g_state->lastBounds);
 
+    hlc::removePassElements("CLensPassElement");
     LensShader::destroy();
     g_state.reset();
 }
